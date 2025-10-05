@@ -5,12 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Libro di Minecraft</title>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
 <style>
 @font-face {
   font-family: 'Minecraft';
   src: url('Minecraft.ttf') format('truetype');
 }
-
 body {
   background-color: #2b2b2b;
   display: flex;
@@ -23,8 +26,6 @@ body {
   font-family: 'Minecraft', monospace;
   overflow-x: hidden;
 }
-
-/* Book */
 .book {
   position: relative;
   width: 70vw;
@@ -37,8 +38,6 @@ body {
   flex-direction: column;
   justify-content: flex-start;
 }
-
-/* Page Content - dentro il contorno del libro */
 .page-content {
   position: absolute;
   top: 12%;
@@ -54,20 +53,16 @@ body {
   box-sizing: border-box;
   gap: 10px;
 }
-
-/* Input Task */
 .todo-input {
   width: 100%;
   border: none;
   outline: none;
   background: rgba(255,255,255,0.7);
-  font-size: 16px; 
+  font-size: 16px;
   padding: 6px;
   border-radius: 4px;
   box-sizing: border-box;
 }
-
-/* Lista Task */
 ul {
   list-style: none;
   padding: 0;
@@ -76,21 +71,17 @@ ul {
   flex-direction: column;
   gap: 8px;
 }
-
 li {
   font-size: 18px;
   color: red;
   cursor: pointer;
   word-break: break-word;
 }
-
 li.done {
   color: green;
   text-decoration: line-through;
   opacity: 0.6;
 }
-
-/* Pulsante Aggiungi */
 .add-btn {
   width: 100%;
   background: #8b5a2b;
@@ -102,13 +93,10 @@ li.done {
   cursor: pointer;
   transition: transform 0.1s ease, background 0.2s;
 }
-
 .add-btn:hover {
   transform: scale(1.05);
   background: #a46c32;
 }
-
-/* Controlli */
 .controls {
   margin-top: 15px;
   display: flex;
@@ -118,7 +106,6 @@ li.done {
   width: 70vw;
   max-width: 700px;
 }
-
 button.nav-btn {
   flex: 1 1 100px;
   min-width: 80px;
@@ -131,13 +118,10 @@ button.nav-btn {
   border-radius: 6px;
   transition: transform 0.1s ease, background 0.2s;
 }
-
 button.nav-btn:hover {
   transform: scale(1.05);
   background: #a46c32;
 }
-
-/* Contatore Pagina */
 #pageCounter {
   margin-top: 10px;
   font-size: 16px;
@@ -145,65 +129,21 @@ button.nav-btn:hover {
   text-align: center;
   width: 100%;
 }
-
-/* Mobile */
 @media (max-width: 480px) {
-  .book {
-    width: 90vw;
-    max-width: 350px;
-  }
-  .page-content {
-    top: 10%;
-    left: 8%;
-    width: 84%;
-    height: 74%;
-    padding: 12px;
-    gap: 6px;
-  }
-  .todo-input {
-    font-size: 14px;
-    padding: 4px;
-  }
-  li {
-    font-size: 16px;
-  }
-  .add-btn, .nav-btn {
-    font-size: 14px;
-    padding: 6px;
-  }
-  #pageCounter {
-    font-size: 14px;
-  }
+  .book { width: 90vw; max-width: 350px; }
+  .page-content { top: 10%; left: 8%; width: 84%; height: 74%; padding: 12px; gap: 6px; }
+  .todo-input { font-size: 14px; padding: 4px; }
+  li { font-size: 16px; }
+  .add-btn, .nav-btn { font-size: 14px; padding: 6px; }
+  #pageCounter { font-size: 14px; }
 }
-
-/* Desktop grande */
 @media (min-width: 1024px) {
-  .book {
-    width: 60vw;
-    max-width: 800px;
-  }
-  .page-content {
-    top: 12%;
-    left: 11%;
-    width: 78%;
-    height: 76%;
-    padding: 24px;
-    gap: 12px;
-  }
-  .todo-input {
-    font-size: 18px;
-    padding: 8px;
-  }
-  li {
-    font-size: 20px;
-  }
-  .add-btn, .nav-btn {
-    font-size: 18px;
-    padding: 10px;
-  }
-  #pageCounter {
-    font-size: 18px;
-  }
+  .book { width: 60vw; max-width: 800px; }
+  .page-content { top: 12%; left: 11%; width: 78%; height: 76%; padding: 24px; gap: 12px; }
+  .todo-input { font-size: 18px; padding: 8px; }
+  li { font-size: 20px; }
+  .add-btn, .nav-btn { font-size: 18px; padding: 10px; }
+  #pageCounter { font-size: 18px; }
 }
 </style>
 </head>
@@ -219,76 +159,105 @@ button.nav-btn:hover {
 
 <div class="controls">
   <button class="nav-btn" onclick="prevPage()">← Pagina Precedente</button>
-    <button class="nav-btn" onclick="nextPage()">Pagina Successiva →</button>
-  <button class="nav-btn" onclick="savePage()">💾 Salva</button>
+  <button class="nav-btn" onclick="nextPage()">Pagina Successiva →</button>
   <button class="nav-btn" onclick="resetBook()">🗑️ Reset Diario</button>
-
 </div>
 
 <div id="pageCounter">Pagina 1 / 1</div>
 
 <script>
-let currentPage = 1;
-let pages = JSON.parse(localStorage.getItem("bookTasks")) || {1: []};
+// === CONFIGURAZIONE FIREBASE ===
+// Sostituisci questi valori con quelli del tuo progetto Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyCNtLUGuXqxoeMKNRsER0e8mTh5HXv9VpI",
+  authDomain: "booksnoop-a57bd.firebaseapp.com",
+  databaseURL: "https://booksnoop-a57bd-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "booksnoop-a57bd",
+  storageBucket: "booksnoop-a57bd.firebasestorage.app",
+  messagingSenderId: "344574414609",
+  appId: "1:344574414609:web:cf52d3c221555e0eafc6b0",
+};
 
-function renderPage() {
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+let currentPage = 1;
+
+// Carica le attività dal database
+function loadTasks() {
+  db.ref('pages/' + currentPage).on('value', snapshot => {
+    const tasks = snapshot.val() || [];
+    renderTasks(tasks);
+  });
+}
+
+// Mostra le attività nella pagina
+function renderTasks(tasks) {
   const list = document.getElementById("todoList");
   list.innerHTML = "";
-
-  const tasks = pages[currentPage] || [];
   tasks.forEach((task, index) => {
     const li = document.createElement("li");
     li.className = task.done ? "done" : "";
     li.innerHTML = `<span onclick="toggleTask(${index})">${task.done ? '✅' : '⬜'} ${task.text}</span>`;
     list.appendChild(li);
   });
-
-  const totalPages = Object.keys(pages).length;
-  document.getElementById("pageCounter").textContent = `Pagina ${currentPage} / ${totalPages}`;
+  updatePageCounter();
 }
 
+// Aggiungi attività
 function addTask() {
   const input = document.getElementById("todoInput");
   const text = input.value.trim();
   if (!text) return;
-  if (!pages[currentPage]) pages[currentPage] = [];
-  pages[currentPage].push({ text, done: false });
-  input.value = "";
-  renderPage();
+  const ref = db.ref('pages/' + currentPage);
+  ref.once('value').then(snapshot => {
+    const tasks = snapshot.val() || [];
+    tasks.push({text: text, done: false});
+    ref.set(tasks);
+    input.value = "";
+  });
 }
 
+// Toggle completamento
 function toggleTask(index) {
-  pages[currentPage][index].done = !pages[currentPage][index].done;
-  renderPage();
+  const ref = db.ref('pages/' + currentPage);
+  ref.once('value').then(snapshot => {
+    const tasks = snapshot.val() || [];
+    if (tasks[index]) tasks[index].done = !tasks[index].done;
+    ref.set(tasks);
+  });
 }
 
-function savePage() {
-  localStorage.setItem("bookTasks", JSON.stringify(pages));
-  alert("Pagina " + currentPage + " salvata!");
-}
-
+// Navigazione pagine
 function nextPage() {
   currentPage++;
-  if (!pages[currentPage]) pages[currentPage] = [];
-  renderPage();
+  loadTasks();
 }
-
 function prevPage() {
   if (currentPage > 1) currentPage--;
-  renderPage();
+  loadTasks();
 }
 
-renderPage();
-
+// Reset diario
 function resetBook() {
-  if (confirm("Sei sicuro di voler cancellare tutto il diario?")) {
-    localStorage.removeItem("bookTasks"); // cancella dal localStorage
-    pages = {1: []}; // resetta le pagine
-    currentPage = 1; // torna alla pagina 1
-    renderPage(); // aggiorna la visualizzazione
+  if(confirm("Sei sicuro di voler cancellare tutto il diario?")) {
+    db.ref('pages').remove();
+    currentPage = 1;
+    loadTasks();
   }
 }
 
+// Aggiorna contatore pagine
+function updatePageCounter() {
+  db.ref('pages').once('value').then(snapshot => {
+    const pages = snapshot.val() || {};
+    const total = Object.keys(pages).length || 1;
+    document.getElementById("pageCounter").textContent = `Pagina ${currentPage} / ${total}`;
+  });
+}
+
+// Carica inizialmente
+loadTasks();
 </script>
 
 </body>
